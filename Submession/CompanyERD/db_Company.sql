@@ -1,0 +1,3 @@
+SELECT FName, LName, BDate, Gender
+FROM EMPLOYEE
+WHERE DNUM = 1;
