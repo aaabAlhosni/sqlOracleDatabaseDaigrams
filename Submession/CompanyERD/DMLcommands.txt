@@ -1,0 +1,276 @@
+================================================================
+Company Database — Full SQL Script
+  Order: Create → Alter (FK) → Insert Data
+================================================================
+
+
+----------------------------------------------------------------
+PHASE 1 — CREATE ALL TABLES (no FK constraints yet)
+----------------------------------------------------------------
+
+-- Strong entity 1
+CREATE TABLE EMPLOYEE (
+    SSN       CHAR(11)    PRIMARY KEY,
+    FName     VARCHAR(30) NOT NULL,
+    LName     VARCHAR(30) NOT NULL,
+    BDate     DATE,
+    Gender    CHAR(1),
+    DNUM      INT,
+    Super_SSN CHAR(11)
+);
+
+-- Strong entity 2
+CREATE TABLE DEPARTMENT (
+    DNUM        INT         PRIMARY KEY,
+    DName       VARCHAR(50) NOT NULL,
+    Manager_SSN CHAR(11),
+    Hiring_Date DATE
+);
+
+-- Strong entity 3
+CREATE TABLE PROJECT (
+    PNumber  INT         PRIMARY KEY,
+    PName    VARCHAR(50) NOT NULL,
+    Location VARCHAR(50),
+    City     VARCHAR(50),
+    DNUM     INT
+);
+
+-- Weak entity
+CREATE TABLE DEPENDENT (
+    Dep_Name VARCHAR(40) NOT NULL,
+    SSN      CHAR(11)    NOT NULL,
+    Gender   CHAR(1),
+    BDate    DATE,
+    PRIMARY KEY (Dep_Name, SSN)
+);
+
+-- Multivalued attribute table
+CREATE TABLE DEPT_LOCATION (
+    DNUM     INT         NOT NULL,
+    Location VARCHAR(50) NOT NULL,
+    PRIMARY KEY (DNUM, Location)
+);
+
+-- M:N junction table
+CREATE TABLE WORKS_ON (
+    SSN     CHAR(11)     NOT NULL,
+    PNumber INT          NOT NULL,
+    Hours   DECIMAL(5,1),
+    PRIMARY KEY (SSN, PNumber)
+);
+
+
+----------------------------------------------------------------
+PHASE 2 — LINK TABLES WITH FK CONSTRAINTS (ALTER TABLE)
+----------------------------------------------------------------
+
+-- EMPLOYEE.DNUM → DEPARTMENT (Works_For: 1:N)
+ALTER TABLE EMPLOYEE
+    ADD CONSTRAINT fk_emp_dept
+    FOREIGN KEY (DNUM)
+    REFERENCES DEPARTMENT(DNUM);
+
+-- EMPLOYEE.Super_SSN → EMPLOYEE (Supervises: unary 1:N)
+ALTER TABLE EMPLOYEE
+    ADD CONSTRAINT fk_emp_supervisor
+    FOREIGN KEY (Super_SSN)
+    REFERENCES EMPLOYEE(SSN);
+
+-- DEPARTMENT.Manager_SSN → EMPLOYEE (Manages: 1:1)
+ALTER TABLE DEPARTMENT
+    ADD CONSTRAINT fk_dept_manager
+    FOREIGN KEY (Manager_SSN)
+    REFERENCES EMPLOYEE(SSN);
+
+-- PROJECT.DNUM → DEPARTMENT (Controls: 1:N)
+ALTER TABLE PROJECT
+    ADD CONSTRAINT fk_proj_dept
+    FOREIGN KEY (DNUM)
+    REFERENCES DEPARTMENT(DNUM);
+
+-- DEPENDENT.SSN → EMPLOYEE (Has: identifying weak entity)
+ALTER TABLE DEPENDENT
+    ADD CONSTRAINT fk_dep_employee
+    FOREIGN KEY (SSN)
+    REFERENCES EMPLOYEE(SSN)
+    ON DELETE CASCADE;
+
+-- DEPT_LOCATION.DNUM → DEPARTMENT (multivalued attribute)
+ALTER TABLE DEPT_LOCATION
+    ADD CONSTRAINT fk_loc_dept
+    FOREIGN KEY (DNUM)
+    REFERENCES DEPARTMENT(DNUM);
+
+-- WORKS_ON.SSN → EMPLOYEE (Works_On: M:N side 1)
+ALTER TABLE WORKS_ON
+    ADD CONSTRAINT fk_wo_employee
+    FOREIGN KEY (SSN)
+    REFERENCES EMPLOYEE(SSN);
+
+-- WORKS_ON.PNumber → PROJECT (Works_On: M:N side 2)
+ALTER TABLE WORKS_ON
+    ADD CONSTRAINT fk_wo_project
+    FOREIGN KEY (PNumber)
+    REFERENCES PROJECT(PNumber);
+
+
+----------------------------------------------------------------
+PHASE 3 — INSERT DATA
+  Order: DEPARTMENT → EMPLOYEE (managers first) →
+         UPDATE DEPARTMENT → PROJECT → DEPT_LOCATION →
+         DEPENDENT → WORKS_ON
+----------------------------------------------------------------
+
+-- Step 1: DEPARTMENT (Manager_SSN = NULL until employees exist)
+
+INSERT INTO DEPARTMENT (DNUM, DName, Manager_SSN, Hiring_Date)
+VALUES (1, 'Engineering', NULL, NULL);
+
+INSERT INTO DEPARTMENT (DNUM, DName, Manager_SSN, Hiring_Date)
+VALUES (2, 'Information Technology', NULL, NULL);
+
+INSERT INTO DEPARTMENT (DNUM, DName, Manager_SSN, Hiring_Date)
+VALUES (3, 'Human Resources', NULL, NULL);
+
+
+-- Step 2: EMPLOYEE — managers first (no Super_SSN needed)
+
+INSERT INTO EMPLOYEE (SSN, FName, LName, BDate, Gender, DNUM, Super_SSN)
+VALUES ('111-22-3301', 'Khalid', 'Al Balushi', '1975-03-12', 'M', 1, NULL);
+
+INSERT INTO EMPLOYEE (SSN, FName, LName, BDate, Gender, DNUM, Super_SSN)
+VALUES ('111-22-3304', 'Maryam', 'Al Rashdi', '1978-04-18', 'F', 2, NULL);
+
+INSERT INTO EMPLOYEE (SSN, FName, LName, BDate, Gender, DNUM, Super_SSN)
+VALUES ('111-22-3307', 'Ibrahim', 'Al Amri', '1972-06-01', 'M', 3, NULL);
+
+-- Step 3: EMPLOYEE — regular staff (supervisors already inserted above)
+
+INSERT INTO EMPLOYEE (SSN, FName, LName, BDate, Gender, DNUM, Super_SSN)
+VALUES ('111-22-3302', 'Fatma', 'Al Harthi', '1980-07-22', 'F', 1, '111-22-3301');
+
+INSERT INTO EMPLOYEE (SSN, FName, LName, BDate, Gender, DNUM, Super_SSN)
+VALUES ('111-22-3303', 'Salim', 'Al Maawali', '1983-11-05', 'M', 1, '111-22-3301');
+
+INSERT INTO EMPLOYEE (SSN, FName, LName, BDate, Gender, DNUM, Super_SSN)
+VALUES ('111-22-3305', 'Ahmed', 'Al Kindi', '1990-09-30', 'M', 2, '111-22-3304');
+
+INSERT INTO EMPLOYEE (SSN, FName, LName, BDate, Gender, DNUM, Super_SSN)
+VALUES ('111-22-3306', 'Noura', 'Al Zadjali', '1985-02-14', 'F', 2, '111-22-3304');
+
+INSERT INTO EMPLOYEE (SSN, FName, LName, BDate, Gender, DNUM, Super_SSN)
+VALUES ('111-22-3308', 'Aisha', 'Al Habsi', '1995-12-25', 'F', 3, '111-22-3307');
+
+
+-- Step 4: UPDATE DEPARTMENT — assign real managers now that employees exist
+
+UPDATE DEPARTMENT
+SET Manager_SSN = '111-22-3301', Hiring_Date = '2010-01-15'
+WHERE DNUM = 1;
+
+UPDATE DEPARTMENT
+SET Manager_SSN = '111-22-3304', Hiring_Date = '2012-03-20'
+WHERE DNUM = 2;
+
+UPDATE DEPARTMENT
+SET Manager_SSN = '111-22-3307', Hiring_Date = '2008-07-01'
+WHERE DNUM = 3;
+
+
+-- Step 5: PROJECT (references DEPARTMENT — now fully complete)
+
+INSERT INTO PROJECT (PNumber, PName, Location, City, DNUM)
+VALUES (101, 'Muscat Smart Grid', 'Block 6', 'Muscat', 1);
+
+INSERT INTO PROJECT (PNumber, PName, Location, City, DNUM)
+VALUES (102, 'Marmul Oil Expansion', 'Block 44', 'Dhofar', 1);
+
+INSERT INTO PROJECT (PNumber, PName, Location, City, DNUM)
+VALUES (103, 'HR Digital Portal', 'HQ Tower', 'Muscat', 3);
+
+INSERT INTO PROJECT (PNumber, PName, Location, City, DNUM)
+VALUES (104, 'Network Infrastructure', 'Data Center', 'Sohar', 2);
+
+
+-- Step 6: DEPT_LOCATION (references DEPARTMENT)
+
+INSERT INTO DEPT_LOCATION (DNUM, Location)
+VALUES (1, 'Muscat');
+
+INSERT INTO DEPT_LOCATION (DNUM, Location)
+VALUES (1, 'Sohar');
+
+INSERT INTO DEPT_LOCATION (DNUM, Location)
+VALUES (2, 'Muscat');
+
+INSERT INTO DEPT_LOCATION (DNUM, Location)
+VALUES (2, 'Salalah');
+
+INSERT INTO DEPT_LOCATION (DNUM, Location)
+VALUES (3, 'Muscat');
+
+
+-- Step 7: DEPENDENT (references EMPLOYEE — uses ON DELETE CASCADE)
+
+INSERT INTO DEPENDENT (Dep_Name, SSN, Gender, BDate)
+VALUES ('Yusuf', '111-22-3301', 'M', '2005-08-10');
+
+INSERT INTO DEPENDENT (Dep_Name, SSN, Gender, BDate)
+VALUES ('Hessa', '111-22-3301', 'F', '2008-03-22');
+
+INSERT INTO DEPENDENT (Dep_Name, SSN, Gender, BDate)
+VALUES ('Mohammed', '111-22-3302', 'M', '2010-11-14');
+
+INSERT INTO DEPENDENT (Dep_Name, SSN, Gender, BDate)
+VALUES ('Sara', '111-22-3304', 'F', '2012-06-30');
+
+INSERT INTO DEPENDENT (Dep_Name, SSN, Gender, BDate)
+VALUES ('Hamdan', '111-22-3307', 'M', '2003-01-19');
+
+INSERT INTO DEPENDENT (Dep_Name, SSN, Gender, BDate)
+VALUES ('Latifa', '111-22-3307', 'F', '2007-09-05');
+
+
+-- Step 8: WORKS_ON (references both EMPLOYEE and PROJECT — must be last)
+
+INSERT INTO WORKS_ON (SSN, PNumber, Hours)
+VALUES ('111-22-3301', 101, 20);
+
+INSERT INTO WORKS_ON (SSN, PNumber, Hours)
+VALUES ('111-22-3301', 102, 15);
+
+INSERT INTO WORKS_ON (SSN, PNumber, Hours)
+VALUES ('111-22-3302', 101, 30);
+
+INSERT INTO WORKS_ON (SSN, PNumber, Hours)
+VALUES ('111-22-3302', 102, 10);
+
+INSERT INTO WORKS_ON (SSN, PNumber, Hours)
+VALUES ('111-22-3303', 102, 35);
+
+INSERT INTO WORKS_ON (SSN, PNumber, Hours)
+VALUES ('111-22-3304', 103, 25);
+
+INSERT INTO WORKS_ON (SSN, PNumber, Hours)
+VALUES ('111-22-3305', 103, 20);
+
+INSERT INTO WORKS_ON (SSN, PNumber, Hours)
+VALUES ('111-22-3305', 104, 15);
+
+INSERT INTO WORKS_ON (SSN, PNumber, Hours)
+VALUES ('111-22-3306', 104, 40);
+
+INSERT INTO WORKS_ON (SSN, PNumber, Hours)
+VALUES ('111-22-3307', 103, 10);
+
+INSERT INTO WORKS_ON (SSN, PNumber, Hours)
+VALUES ('111-22-3308', 103, 20);
+
+INSERT INTO WORKS_ON (SSN, PNumber, Hours)
+VALUES ('111-22-3308', 104, 10);
+
+
+================================================================
+  END OF SCRIPT
+================================================================
