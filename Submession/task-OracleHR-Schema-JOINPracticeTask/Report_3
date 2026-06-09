@@ -1,0 +1,144 @@
+
+EMPLOYEE_NAME                                  MANAGER_NAME                                  
+---------------------------------------------- ----------------------------------------------
+Elizabeth Bates                                Gerald Cambrault                              
+Harrison Bloom                                 Gerald Cambrault                              
+Tayler Fox                                     Gerald Cambrault                              
+Sundita Kumar                                  Gerald Cambrault                              
+Lisa Ozer                                      Gerald Cambrault                              
+William Smith                                  Gerald Cambrault                              
+Alexander Hunold                               Lex De Haan                                   
+Sundar Ande                                    Alberto Errazuriz                             
+Amit Banda                                     Alberto Errazuriz                             
+Danielle Greene                                Alberto Errazuriz                             
+David Lee                                      Alberto Errazuriz                             
+
+EMPLOYEE_NAME                                  MANAGER_NAME                                  
+---------------------------------------------- ----------------------------------------------
+Mattea Marvins                                 Alberto Errazuriz                             
+Clara Vishney                                  Alberto Errazuriz                             
+Mozhe Atkinson                                 Adam Fripp                                    
+Laura Bissot                                   Adam Fripp                                    
+Alexis Bull                                    Adam Fripp                                    
+Anthony Cabrio                                 Adam Fripp                                    
+Julia Dellinger                                Adam Fripp                                    
+James Marlow                                   Adam Fripp                                    
+TJ Olson                                       Adam Fripp                                    
+Nandita Sarchand                               Adam Fripp                                    
+John Chen                                      Nancy Greenberg                               
+
+EMPLOYEE_NAME                                  MANAGER_NAME                                  
+---------------------------------------------- ----------------------------------------------
+Daniel Faviet                                  Nancy Greenberg                               
+Luis Popp                                      Nancy Greenberg                               
+Ismael Sciarra                                 Nancy Greenberg                               
+Jose Manuel Urman                              Nancy Greenberg                               
+Pat Fay                                        Michael Hartstein                             
+William Gietz                                  Shelley Higgins                               
+David Austin                                   Alexander Hunold                              
+Bruce Ernst                                    Alexander Hunold                              
+Diana Lorentz                                  Alexander Hunold                              
+Valli Pataballa                                Alexander Hunold                              
+Kelly Chung                                    Payam Kaufling                                
+
+EMPLOYEE_NAME                                  MANAGER_NAME                                  
+---------------------------------------------- ----------------------------------------------
+Jennifer Dilly                                 Payam Kaufling                                
+Timothy Gates                                  Payam Kaufling                                
+Ki Gee                                         Payam Kaufling                                
+Jason Mallin                                   Payam Kaufling                                
+Randall Perkins                                Payam Kaufling                                
+Hazel Philtanker                               Payam Kaufling                                
+Michael Rogers                                 Payam Kaufling                                
+Gerald Cambrault                               Steven King                                   
+Lex De Haan                                    Steven King                                   
+Alberto Errazuriz                              Steven King                                   
+Adam Fripp                                     Steven King                                   
+
+EMPLOYEE_NAME                                  MANAGER_NAME                                  
+---------------------------------------------- ----------------------------------------------
+Michael Hartstein                              Steven King                                   
+Payam Kaufling                                 Steven King                                   
+Neena Kochhar                                  Steven King                                   
+Kevin Mourgos                                  Steven King                                   
+Karen Partners                                 Steven King                                   
+Den Raphaely                                   Steven King                                   
+John Russell                                   Steven King                                   
+Shanta Vollman                                 Steven King                                   
+Matthew Weiss                                  Steven King                                   
+Eleni Zlotkey                                  Steven King                                   
+Hermann Baer                                   Neena Kochhar                                 
+
+EMPLOYEE_NAME                                  MANAGER_NAME                                  
+---------------------------------------------- ----------------------------------------------
+Nancy Greenberg                                Neena Kochhar                                 
+Shelley Higgins                                Neena Kochhar                                 
+Susan Mavris                                   Neena Kochhar                                 
+Jennifer Whalen                                Neena Kochhar                                 
+Curtis Davies                                  Kevin Mourgos                                 
+Kevin Feeney                                   Kevin Mourgos                                 
+Douglas Grant                                  Kevin Mourgos                                 
+Randall Matos                                  Kevin Mourgos                                 
+Donald OConnell                                Kevin Mourgos                                 
+Trenna Rajs                                    Kevin Mourgos                                 
+Peter Vargas                                   Kevin Mourgos                                 
+
+EMPLOYEE_NAME                                  MANAGER_NAME                                  
+---------------------------------------------- ----------------------------------------------
+Alana Walsh                                    Kevin Mourgos                                 
+Louise Doran                                   Karen Partners                                
+Janette King                                   Karen Partners                                
+Allan McEwen                                   Karen Partners                                
+Sarath Sewall                                  Karen Partners                                
+Lindsey Smith                                  Karen Partners                                
+Patrick Sully                                  Karen Partners                                
+Shelli Baida                                   Den Raphaely                                  
+Karen Colmenares                               Den Raphaely                                  
+Guy Himuro                                     Den Raphaely                                  
+Alexander Khoo                                 Den Raphaely                                  
+
+EMPLOYEE_NAME                                  MANAGER_NAME                                  
+---------------------------------------------- ----------------------------------------------
+Sigal Tobias                                   Den Raphaely                                  
+David Bernstein                                John Russell                                  
+Nanette Cambrault                              John Russell                                  
+Peter Hall                                     John Russell                                  
+Christopher Olsen                              John Russell                                  
+Peter Tucker                                   John Russell                                  
+Oliver Tuvault                                 John Russell                                  
+Sarah Bell                                     Shanta Vollman                                
+Britney Everett                                Shanta Vollman                                
+Vance Jones                                    Shanta Vollman                                
+Renske Ladwig                                  Shanta Vollman                                
+
+EMPLOYEE_NAME                                  MANAGER_NAME                                  
+---------------------------------------------- ----------------------------------------------
+Samuel McCain                                  Shanta Vollman                                
+Joshua Patel                                   Shanta Vollman                                
+John Seo                                       Shanta Vollman                                
+Stephen Stiles                                 Shanta Vollman                                
+Jean Fleaur                                    Matthew Weiss                                 
+Girard Geoni                                   Matthew Weiss                                 
+James Landry                                   Matthew Weiss                                 
+Steven Markle                                  Matthew Weiss                                 
+Irene Mikkilineni                              Matthew Weiss                                 
+Julia Nayer                                    Matthew Weiss                                 
+Martha Sullivan                                Matthew Weiss                                 
+
+EMPLOYEE_NAME                                  MANAGER_NAME                                  
+---------------------------------------------- ----------------------------------------------
+Winston Taylor                                 Matthew Weiss                                 
+Ellen Abel                                     Eleni Zlotkey                                 
+Kimberely Grant                                Eleni Zlotkey                                 
+Alyssa Hutton                                  Eleni Zlotkey                                 
+Charles Johnson                                Eleni Zlotkey                                 
+Jack Livingston                                Eleni Zlotkey                                 
+Jonathon Taylor                                Eleni Zlotkey                                 
+
+106 rows selected. 
+
+
+EMPLOYEE_ID EMPLOYEE_NAME                                  JOB_ID    
+----------- ---------------------------------------------- ----------
+        100 Steven King                                    AD_PRES   
+

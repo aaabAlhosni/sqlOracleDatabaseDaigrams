@@ -1,0 +1,35 @@
+
+EMPLOYEE_NAME                                  EMPLOYEE_DEPARTMENT            MANAGER_NAME                                   MANAGER_DEPARTMENT            
+---------------------------------------------- ------------------------------ ---------------------------------------------- ------------------------------
+Shelley Higgins                                Accounting                     Neena Kochhar                                  Executive                     
+Jennifer Whalen                                Administration                 Neena Kochhar                                  Executive                     
+Nancy Greenberg                                Finance                        Neena Kochhar                                  Executive                     
+Susan Mavris                                   Human Resources                Neena Kochhar                                  Executive                     
+Alexander Hunold                               IT                             Lex De Haan                                    Executive                     
+Michael Hartstein                              Marketing                      Steven King                                    Executive                     
+Hermann Baer                                   Public Relations               Neena Kochhar                                  Executive                     
+Den Raphaely                                   Purchasing                     Steven King                                    Executive                     
+Gerald Cambrault                               Sales                          Steven King                                    Executive                     
+Alberto Errazuriz                              Sales                          Steven King                                    Executive                     
+Karen Partners                                 Sales                          Steven King                                    Executive                     
+
+EMPLOYEE_NAME                                  EMPLOYEE_DEPARTMENT            MANAGER_NAME                                   MANAGER_DEPARTMENT            
+---------------------------------------------- ------------------------------ ---------------------------------------------- ------------------------------
+John Russell                                   Sales                          Steven King                                    Executive                     
+Eleni Zlotkey                                  Sales                          Steven King                                    Executive                     
+Adam Fripp                                     Shipping                       Steven King                                    Executive                     
+Payam Kaufling                                 Shipping                       Steven King                                    Executive                     
+Kevin Mourgos                                  Shipping                       Steven King                                    Executive                     
+Shanta Vollman                                 Shipping                       Steven King                                    Executive                     
+Matthew Weiss                                  Shipping                       Steven King                                    Executive                     
+
+18 rows selected. 
+
+
+COUNTRY_NAME                             REGION_NAME              
+---------------------------------------- -------------------------
+Canada                                   Americas                 
+United States of America                 Americas                 
+Germany                                  Europe                   
+United Kingdom                           Europe                   
+
