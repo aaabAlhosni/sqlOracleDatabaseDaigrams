@@ -1,0 +1,205 @@
+-- -----------------------------------------------------------------
+-- 1. ZIP_LOCATIONS  (no foreign keys -> created first)
+-- -----------------------------------------------------------------
+CREATE TABLE ZIP_LOCATIONS (
+    zip_code   VARCHAR2(10)   NOT NULL,
+    city       VARCHAR2(50)   NOT NULL,
+    CONSTRAINT pk_zip_locations
+        PRIMARY KEY (zip_code)
+);
+ 
+ 
+-- -----------------------------------------------------------------
+-- 2. SALARY_BONUS  (no foreign keys)
+-- -----------------------------------------------------------------
+CREATE SEQUENCE seq_salary_bonus
+    START WITH 1
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE;
+ 
+CREATE TABLE SALARY_BONUS (
+    salary_id  NUMBER(6)
+        DEFAULT seq_salary_bonus.NEXTVAL NOT NULL,
+    amount     NUMBER(10,2)   NOT NULL,
+    annual     NUMBER(10,2)   NOT NULL,
+    bons       NUMBER(10,2),
+    CONSTRAINT pk_salary_bonus
+        PRIMARY KEY (salary_id),
+    CONSTRAINT chk_salary_bonus_amount
+        CHECK (amount > 0)
+);
+ 
+ 
+-- -----------------------------------------------------------------
+-- 3. JOB_DEPARTMENT  (mgr_emp_id is a plain column for now;
+--    its FK to EMPLOYEE is added in step 9, after EMPLOYEE
+--    exists)
+-- -----------------------------------------------------------------
+CREATE SEQUENCE seq_job_department
+    START WITH 1
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE;
+ 
+CREATE TABLE JOB_DEPARTMENT (
+    job_id      NUMBER(6)
+        DEFAULT seq_job_department.NEXTVAL NOT NULL,
+    job_Depar   VARCHAR2(50)  NOT NULL,
+    name        VARCHAR2(50)  NOT NULL,
+    Description VARCHAR2(300) NOT NULL,
+    MinS        NUMBER(10,2)  NOT NULL,
+    Max_S       NUMBER(10,2)  NOT NULL,
+    mgr_emp_id  NUMBER(6),
+    CONSTRAINT pk_job_department
+        PRIMARY KEY (job_id)
+);
+ 
+ 
+-- -----------------------------------------------------------------
+-- 4. QUALIFICATION  (depends only on JOB_DEPARTMENT, so it is
+--    created here -- right after its one dependency -- rather
+--    than later next to the EMPLOYEE-related tables)
+-- -----------------------------------------------------------------
+CREATE SEQUENCE seq_qualification
+    START WITH 1
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE;
+ 
+CREATE TABLE QUALIFICATION (
+    qual_id    NUMBER(6)
+        DEFAULT seq_qualification.NEXTVAL NOT NULL,
+    position   VARCHAR2(50)  NOT NULL,
+    requirmt   VARCHAR2(200) NOT NULL,
+    date_in    DATE          NOT NULL,
+    job_id     NUMBER(6)     NOT NULL,
+    CONSTRAINT pk_qualification
+        PRIMARY KEY (qual_id),
+    CONSTRAINT fk_qualification_job
+        FOREIGN KEY (job_id)
+        REFERENCES JOB_DEPARTMENT(job_id)
+);
+ 
+ 
+-- -----------------------------------------------------------------
+-- 5. EMPLOYEE
+--    (depends on ZIP_LOCATIONS, JOB_DEPARTMENT, SALARY_BONUS)
+-- -----------------------------------------------------------------
+CREATE SEQUENCE seq_employee
+    START WITH 1
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE;
+ 
+CREATE TABLE EMPLOYEE (
+    emp_id      NUMBER(6)
+        DEFAULT seq_employee.NEXTVAL NOT NULL,
+    emp_pass    VARCHAR2(50)  NOT NULL,
+    age         NUMBER(3)     NOT NULL,
+    gender      CHAR(1)       NOT NULL,
+    F_Name      VARCHAR2(30)  NOT NULL,
+    L_Name      VARCHAR2(30)  NOT NULL,
+    street      VARCHAR2(100) NOT NULL,
+    zip_code    VARCHAR2(10)  NOT NULL,
+    job_id      NUMBER(6)     NOT NULL,
+    salary_id   NUMBER(6)     NOT NULL,
+    CONSTRAINT pk_employee
+        PRIMARY KEY (emp_id),
+    CONSTRAINT chk_employee_gender
+        CHECK (gender IN ('M','F')),
+    CONSTRAINT fk_employee_zip
+        FOREIGN KEY (zip_code)
+        REFERENCES ZIP_LOCATIONS(zip_code),
+    CONSTRAINT fk_employee_job
+        FOREIGN KEY (job_id)
+        REFERENCES JOB_DEPARTMENT(job_id),
+    CONSTRAINT fk_employee_salary
+        FOREIGN KEY (salary_id)
+        REFERENCES SALARY_BONUS(salary_id)
+);
+ 
+ 
+-- -----------------------------------------------------------------
+-- 6. EMP_EMAIL
+--    (depends on EMPLOYEE; composite key, no sequence since
+--    neither column is a generated surrogate value)
+-- -----------------------------------------------------------------
+CREATE TABLE EMP_EMAIL (
+    emp_email  VARCHAR2(100) NOT NULL,
+    emp_id     NUMBER(6)     NOT NULL,
+    CONSTRAINT pk_emp_email
+        PRIMARY KEY (emp_email, emp_id),
+    CONSTRAINT fk_emp_email_employee
+        FOREIGN KEY (emp_id)
+        REFERENCES EMPLOYEE(emp_id)
+);
+ 
+ 
+-- -----------------------------------------------------------------
+-- 7. LEAVEE  (depends on EMPLOYEE)
+--    Note: "date" is a non-reserved keyword in Oracle and is
+--    legal as a column name; kept here only because it matches
+--    the normalized schema exactly as written.
+-- -----------------------------------------------------------------
+CREATE SEQUENCE seq_leavee
+    START WITH 1
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE;
+ 
+CREATE TABLE LEAVEE (
+    leave_id    NUMBER(6)
+        DEFAULT seq_leavee.NEXTVAL NOT NULL,
+    leave_date  DATE          NOT NULL,
+    reason      VARCHAR2(200) NOT NULL,
+    emp_id      NUMBER(6)     NOT NULL,
+    CONSTRAINT pk_leavee
+        PRIMARY KEY (leave_id),
+    CONSTRAINT fk_leavee_employee
+        FOREIGN KEY (emp_id)
+        REFERENCES EMPLOYEE(emp_id)
+);
+ 
+-- -----------------------------------------------------------------
+-- 8. PAYROLL
+--    (depends on EMPLOYEE, SALARY_BONUS, LEAVEE)
+-- -----------------------------------------------------------------
+CREATE SEQUENCE seq_payroll
+    START WITH 1
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE;
+ 
+CREATE TABLE PAYROLL (
+    pay_id      NUMBER(6)
+        DEFAULT seq_payroll.NEXTVAL NOT NULL,
+    total_am    NUMBER(10,2)  NOT NULL,
+    report      VARCHAR2(200),
+    pay_date    DATE          NOT NULL,
+    emp_id      NUMBER(6)     NOT NULL,
+    salary_id   NUMBER(6)     NOT NULL,
+    leave_id    NUMBER(6),
+    CONSTRAINT pk_payroll
+        PRIMARY KEY (pay_id),
+    CONSTRAINT fk_payroll_employee
+        FOREIGN KEY (emp_id)
+        REFERENCES EMPLOYEE(emp_id),
+    CONSTRAINT fk_payroll_salary
+        FOREIGN KEY (salary_id)
+        REFERENCES SALARY_BONUS(salary_id),
+    CONSTRAINT fk_payroll_leave
+        FOREIGN KEY (leave_id)
+        REFERENCES LEAVEE(leave_id)
+);
+
+
+-- -----------------------------------------------------------------
+-- 9. Close the circular reference:
+--    JOB_DEPARTMENT.mgr_emp_id -> EMPLOYEE
+--    (EMPLOYEE now exists, so this FK can finally be declared)
+-- -----------------------------------------------------------------
+ALTER TABLE JOB_DEPARTMENT
+    ADD CONSTRAINT fk_job_department_mgr
+    FOREIGN KEY (mgr_emp_id)
+    REFERENCES EMPLOYEE(emp_id);

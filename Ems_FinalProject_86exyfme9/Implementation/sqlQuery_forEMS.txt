@@ -1,0 +1,153 @@
+-- 1. ZIP_LOCATIONS (no dependencies)
+INSERT INTO ZIP_LOCATIONS (zip_code, city) VALUES ('100', 'Muscat');
+INSERT INTO ZIP_LOCATIONS (zip_code, city) VALUES ('211', 'Salalah');
+INSERT INTO ZIP_LOCATIONS (zip_code, city) VALUES ('311', 'Sohar');
+INSERT INTO ZIP_LOCATIONS (zip_code, city) VALUES ('611', 'Nizwa');
+INSERT INTO ZIP_LOCATIONS (zip_code, city) VALUES ('411', 'Sur');
+
+-- 2. SALARY_BONUS (no dependencies)
+INSERT INTO SALARY_BONUS (salary_id, amount, annual, bons)
+VALUES (seq_salary_bonus.NEXTVAL, 1500, 18000, 500);
+INSERT INTO SALARY_BONUS (salary_id, amount, annual, bons)
+VALUES (seq_salary_bonus.NEXTVAL, 1800, 21600, 600);
+INSERT INTO SALARY_BONUS (salary_id, amount, annual, bons)
+VALUES (seq_salary_bonus.NEXTVAL, 1300, 15600, NULL);
+INSERT INTO SALARY_BONUS (salary_id, amount, annual, bons)
+VALUES (seq_salary_bonus.NEXTVAL, 2000, 24000, 800);
+INSERT INTO SALARY_BONUS (salary_id, amount, annual, bons)
+VALUES (seq_salary_bonus.NEXTVAL, 1100, 13200, 300);
+-- Engineering salary records (salary_id 6, 7)
+INSERT INTO SALARY_BONUS (salary_id, amount, annual, bons)
+VALUES (seq_salary_bonus.NEXTVAL, 1900, 22800, 700);
+INSERT INTO SALARY_BONUS (salary_id, amount, annual, bons)
+VALUES (seq_salary_bonus.NEXTVAL, 2100, 25200, 900);
+
+-- 3. JOB_DEPARTMENT (mgr_emp_id left NULL until EMPLOYEE is populated)
+INSERT INTO JOB_DEPARTMENT (job_id, job_Depar, name, Description, MinS, Max_S, mgr_emp_id)
+VALUES (seq_job_department.NEXTVAL, 'Human Resources', 'HR Manager',
+        'Oversees recruitment, employee relations, and HR policy', 1200, 2200, NULL);
+INSERT INTO JOB_DEPARTMENT (job_id, job_Depar, name, Description, MinS, Max_S, mgr_emp_id)
+VALUES (seq_job_department.NEXTVAL, 'Information Technology', 'Software Engineer',
+        'Develops and maintains backend systems and applications', 1500, 3000, NULL);
+INSERT INTO JOB_DEPARTMENT (job_id, job_Depar, name, Description, MinS, Max_S, mgr_emp_id)
+VALUES (seq_job_department.NEXTVAL, 'Finance', 'Financial Analyst',
+        'Manages budgets, forecasts, and financial reporting', 1300, 2500, NULL);
+INSERT INTO JOB_DEPARTMENT (job_id, job_Depar, name, Description, MinS, Max_S, mgr_emp_id)
+VALUES (seq_job_department.NEXTVAL, 'Sales', 'Sales Executive',
+        'Manages client accounts and drives revenue growth', 1000, 2000, NULL);
+INSERT INTO JOB_DEPARTMENT (job_id, job_Depar, name, Description, MinS, Max_S, mgr_emp_id)
+VALUES (seq_job_department.NEXTVAL, 'Operations', 'Operations Supervisor',
+        'Coordinates daily operations and logistics', 1100, 2100, NULL);
+-- Engineering department (job_id 6)
+INSERT INTO JOB_DEPARTMENT (job_id, job_Depar, name, Description, MinS, Max_S, mgr_emp_id)
+VALUES (seq_job_department.NEXTVAL, 'Engineering', 'Engineering Manager',
+        'Leads engineering teams and oversees technical delivery', 1800, 3500, NULL);
+
+-- 4. QUALIFICATION (depends on JOB_DEPARTMENT)
+INSERT INTO QUALIFICATION (qual_id, position, requirmt, date_in, job_id)
+VALUES (seq_qualification.NEXTVAL, 'Bachelor Degree',
+        'Bachelor degree in Human Resources or related field',
+        TO_DATE('2026-01-05','YYYY-MM-DD'), 1);
+INSERT INTO QUALIFICATION (qual_id, position, requirmt, date_in, job_id)
+VALUES (seq_qualification.NEXTVAL, 'Bachelor Degree',
+        'Bachelor degree in Computer Science or related field',
+        TO_DATE('2026-01-10','YYYY-MM-DD'), 2);
+INSERT INTO QUALIFICATION (qual_id, position, requirmt, date_in, job_id)
+VALUES (seq_qualification.NEXTVAL, 'CPA License',
+        'Certified Public Accountant license required',
+        TO_DATE('2026-01-12','YYYY-MM-DD'), 3);
+INSERT INTO QUALIFICATION (qual_id, position, requirmt, date_in, job_id)
+VALUES (seq_qualification.NEXTVAL, 'Sales Experience',
+        'Minimum 2 years sales experience',
+        TO_DATE('2026-01-15','YYYY-MM-DD'), 4);
+INSERT INTO QUALIFICATION (qual_id, position, requirmt, date_in, job_id)
+VALUES (seq_qualification.NEXTVAL, 'Operations Diploma',
+        'Diploma in logistics or supply chain management',
+        TO_DATE('2026-01-18','YYYY-MM-DD'), 5);
+
+-- 5. EMPLOYEE (depends on ZIP_LOCATIONS, JOB_DEPARTMENT, SALARY_BONUS)
+INSERT INTO EMPLOYEE (emp_id, emp_pass, age, gender, F_Name, L_Name, street, zip_code, job_id, salary_id)
+VALUES (seq_employee.NEXTVAL, 'Ahmed@2026', 29, 'M', 'Ahmed', 'Al-Busaidi', 'Al Khuwair Street', '100', 1, 1);
+INSERT INTO EMPLOYEE (emp_id, emp_pass, age, gender, F_Name, L_Name, street, zip_code, job_id, salary_id)
+VALUES (seq_employee.NEXTVAL, 'Fatma@2026', 34, 'F', 'Fatma', 'Al-Hinai', 'Qurum Street', '100', 2, 2);
+INSERT INTO EMPLOYEE (emp_id, emp_pass, age, gender, F_Name, L_Name, street, zip_code, job_id, salary_id)
+VALUES (seq_employee.NEXTVAL, 'Said@2026', 41, 'M', 'Said', 'Al-Balushi', 'Salalah Main Road', '211', 3, 3);
+INSERT INTO EMPLOYEE (emp_id, emp_pass, age, gender, F_Name, L_Name, street, zip_code, job_id, salary_id)
+VALUES (seq_employee.NEXTVAL, 'Mariam@2026', 27, 'F', 'Mariam', 'Al-Saadi', 'Sohar Industrial Road', '311', 4, 4);
+INSERT INTO EMPLOYEE (emp_id, emp_pass, age, gender, F_Name, L_Name, street, zip_code, job_id, salary_id)
+VALUES (seq_employee.NEXTVAL, 'Khalid@2026', 38, 'M', 'Khalid', 'Al-Harthy', 'Nizwa Fort Street', '611', 5, 5);
+INSERT INTO EMPLOYEE (emp_id, emp_pass, age, gender, F_Name, L_Name, street, zip_code, job_id, salary_id)
+VALUES (seq_employee.NEXTVAL, 'Aisha@2026', 31, 'F', 'Aisha', 'Al-Lawati', 'Sur Corniche Road', '411', 2, 1);
+INSERT INTO EMPLOYEE (emp_id, emp_pass, age, gender, F_Name, L_Name, street, zip_code, job_id, salary_id)
+VALUES (seq_employee.NEXTVAL, 'Yousuf@2026', 45, 'M', 'Yousuf', 'Al-Mukhaini', 'Al Khuwair Street', '100', 1, 2);
+INSERT INTO EMPLOYEE (emp_id, emp_pass, age, gender, F_Name, L_Name, street, zip_code, job_id, salary_id)
+VALUES (seq_employee.NEXTVAL, 'Salma@2026', 26, 'F', 'Salma', 'Al-Zadjali', 'Salalah Main Road', '211', 4, 3);
+INSERT INTO EMPLOYEE (emp_id, emp_pass, age, gender, F_Name, L_Name, street, zip_code, job_id, salary_id)
+VALUES (seq_employee.NEXTVAL, 'Hamed@2026', 36, 'M', 'Hamed', 'Al-Farsi', 'Sohar Industrial Road', '311', 3, 4);
+INSERT INTO EMPLOYEE (emp_id, emp_pass, age, gender, F_Name, L_Name, street, zip_code, job_id, salary_id)
+VALUES (seq_employee.NEXTVAL, 'Noora@2026', 29, 'F', 'Noora', 'Al-Kindi', 'Nizwa Fort Street', '611', 5, 5);
+-- Engineering employees (emp_id 11, 12)
+INSERT INTO EMPLOYEE (emp_id, emp_pass, age, gender, F_Name, L_Name, street, zip_code, job_id, salary_id)
+VALUES (seq_employee.NEXTVAL, 'Zainab@2026', 30, 'F', 'Zainab', 'Al-Riyami', 'Al Khuwair Street', '100', 6, 6);
+INSERT INTO EMPLOYEE (emp_id, emp_pass, age, gender, F_Name, L_Name, street, zip_code, job_id, salary_id)
+VALUES (seq_employee.NEXTVAL, 'Sultan@2026', 33, 'M', 'Sultan', 'Al-Maamari', 'Qurum Street', '100', 6, 7);
+
+-- 6. EMP_EMAIL (depends on EMPLOYEE)
+INSERT INTO EMP_EMAIL (emp_email, emp_id) VALUES ('ahmed.albusaidi@company.om', 1);
+INSERT INTO EMP_EMAIL (emp_email, emp_id) VALUES ('fatma.alhinai@company.om', 2);
+INSERT INTO EMP_EMAIL (emp_email, emp_id) VALUES ('said.albalushi@company.om', 3);
+INSERT INTO EMP_EMAIL (emp_email, emp_id) VALUES ('mariam.alsaadi@company.om', 4);
+INSERT INTO EMP_EMAIL (emp_email, emp_id) VALUES ('khalid.alharthy@company.om', 5);
+INSERT INTO EMP_EMAIL (emp_email, emp_id) VALUES ('aisha.allawati@company.om', 6);
+INSERT INTO EMP_EMAIL (emp_email, emp_id) VALUES ('yousuf.almukhaini@company.om', 7);
+INSERT INTO EMP_EMAIL (emp_email, emp_id) VALUES ('salma.alzadjali@company.om', 8);
+INSERT INTO EMP_EMAIL (emp_email, emp_id) VALUES ('hamed.alfarsi@company.om', 9);
+INSERT INTO EMP_EMAIL (emp_email, emp_id) VALUES ('noora.alkindi@company.om', 10);
+-- Engineering emails
+INSERT INTO EMP_EMAIL (emp_email, emp_id) VALUES ('zainab.alriyami@company.om', 11);
+INSERT INTO EMP_EMAIL (emp_email, emp_id) VALUES ('sultan.almaamari@company.om', 12);
+
+-- 7. LEAVEE (depends on EMPLOYEE)
+INSERT INTO LEAVEE (leave_id, leave_date, reason, emp_id)
+VALUES (seq_leavee.NEXTVAL, TO_DATE('2026-02-10','YYYY-MM-DD'), 'Annual leave', 1);
+INSERT INTO LEAVEE (leave_id, leave_date, reason, emp_id)
+VALUES (seq_leavee.NEXTVAL, TO_DATE('2026-02-18','YYYY-MM-DD'), 'Sick leave', 3);
+INSERT INTO LEAVEE (leave_id, leave_date, reason, emp_id)
+VALUES (seq_leavee.NEXTVAL, TO_DATE('2026-03-02','YYYY-MM-DD'), 'Family emergency', 5);
+INSERT INTO LEAVEE (leave_id, leave_date, reason, emp_id)
+VALUES (seq_leavee.NEXTVAL, TO_DATE('2026-03-15','YYYY-MM-DD'), 'Annual leave', 7);
+INSERT INTO LEAVEE (leave_id, leave_date, reason, emp_id)
+VALUES (seq_leavee.NEXTVAL, TO_DATE('2026-03-20','YYYY-MM-DD'), 'Sick leave', 9);
+
+-- 8. PAYROLL (depends on EMPLOYEE, SALARY_BONUS, LEAVEE)
+INSERT INTO PAYROLL (pay_id, total_am, report, pay_date, emp_id, salary_id, leave_id)
+VALUES (seq_payroll.NEXTVAL, 1500, 'Monthly payroll processed', TO_DATE('2026-03-01','YYYY-MM-DD'), 1, 1, 1);
+INSERT INTO PAYROLL (pay_id, total_am, report, pay_date, emp_id, salary_id, leave_id)
+VALUES (seq_payroll.NEXTVAL, 1800, 'Monthly payroll processed', TO_DATE('2026-03-01','YYYY-MM-DD'), 2, 2, NULL);
+INSERT INTO PAYROLL (pay_id, total_am, report, pay_date, emp_id, salary_id, leave_id)
+VALUES (seq_payroll.NEXTVAL, 1300, 'Monthly payroll processed', TO_DATE('2026-03-01','YYYY-MM-DD'), 3, 3, 2);
+INSERT INTO PAYROLL (pay_id, total_am, report, pay_date, emp_id, salary_id, leave_id)
+VALUES (seq_payroll.NEXTVAL, 2000, 'Monthly payroll processed', TO_DATE('2026-03-01','YYYY-MM-DD'), 4, 4, NULL);
+INSERT INTO PAYROLL (pay_id, total_am, report, pay_date, emp_id, salary_id, leave_id)
+VALUES (seq_payroll.NEXTVAL, 1100, 'Monthly payroll processed', TO_DATE('2026-03-01','YYYY-MM-DD'), 5, 5, 3);
+INSERT INTO PAYROLL (pay_id, total_am, report, pay_date, emp_id, salary_id, leave_id)
+VALUES (seq_payroll.NEXTVAL, 1500, 'Monthly payroll processed', TO_DATE('2026-03-01','YYYY-MM-DD'), 6, 1, NULL);
+INSERT INTO PAYROLL (pay_id, total_am, report, pay_date, emp_id, salary_id, leave_id)
+VALUES (seq_payroll.NEXTVAL, 1800, 'Monthly payroll processed', TO_DATE('2026-03-01','YYYY-MM-DD'), 7, 2, 4);
+INSERT INTO PAYROLL (pay_id, total_am, report, pay_date, emp_id, salary_id, leave_id)
+VALUES (seq_payroll.NEXTVAL, 1300, 'Monthly payroll processed', TO_DATE('2026-03-01','YYYY-MM-DD'), 8, 3, NULL);
+-- Engineering payroll (high total_am so the department average exceeds 8000)
+INSERT INTO PAYROLL (pay_id, total_am, report, pay_date, emp_id, salary_id, leave_id)
+VALUES (seq_payroll.NEXTVAL, 9000, 'Monthly payroll processed', TO_DATE('2026-04-01','YYYY-MM-DD'), 11, 6, NULL);
+INSERT INTO PAYROLL (pay_id, total_am, report, pay_date, emp_id, salary_id, leave_id)
+VALUES (seq_payroll.NEXTVAL, 8500, 'Monthly payroll processed', TO_DATE('2026-04-01','YYYY-MM-DD'), 12, 7, NULL);
+
+-- 9. Close JOB_DEPARTMENT.mgr_emp_id now that EMPLOYEE rows exist
+UPDATE JOB_DEPARTMENT SET mgr_emp_id = 1 WHERE job_id = 1;
+UPDATE JOB_DEPARTMENT SET mgr_emp_id = 2 WHERE job_id = 2;
+UPDATE JOB_DEPARTMENT SET mgr_emp_id = 3 WHERE job_id = 3;
+UPDATE JOB_DEPARTMENT SET mgr_emp_id = 4 WHERE job_id = 4;
+UPDATE JOB_DEPARTMENT SET mgr_emp_id = 5 WHERE job_id = 5;
+UPDATE JOB_DEPARTMENT SET mgr_emp_id = 11 WHERE job_id = 6;
+
+COMMIT;

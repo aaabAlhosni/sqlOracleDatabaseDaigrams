@@ -1,0 +1,27 @@
+-- (a) Employees aged 25-40, ordered by last name ascending
+SELECT emp_id, F_Name, L_Name, age
+FROM EMPLOYEE
+WHERE age BETWEEN 25 AND 40
+ORDER BY L_Name ASC;
+
+-- (b) Payroll records over 5000, with employee name and department
+SELECT e.F_Name, e.L_Name, jd.job_Depar AS department,
+       p.total_am
+FROM PAYROLL p
+JOIN EMPLOYEE e ON p.emp_id = e.emp_id
+JOIN JOB_DEPARTMENT jd ON e.job_id = jd.job_id
+WHERE p.total_am > 5000;
+
+-- (c) Employees who took leave for a sick-related reason (case-insensitive)
+SELECT DISTINCT e.emp_id, e.F_Name, e.L_Name
+FROM EMPLOYEE e
+JOIN LEAVEE l ON e.emp_id = l.emp_id
+WHERE UPPER(l.reason) LIKE '%SICK%';
+
+-- (d) Departments with no employees assigned (NOT EXISTS)
+SELECT jd.job_id, jd.job_Depar, jd.name
+FROM JOB_DEPARTMENT jd
+WHERE NOT EXISTS (
+    SELECT 1 FROM EMPLOYEE e
+    WHERE e.job_id = jd.job_id
+);
