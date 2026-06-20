@@ -1,0 +1,170 @@
+============================================================
+  04 AGGREGATION FUNCTIONS — QUERY REFERENCE
+  Employee Management System | Task ID: 86exy52gc
+  Done by: ABDULLAH BIN KHALID ALHOSNI
+============================================================
+
+
+────────────────────────────────────────────────────────────
+  TASK 1 │ Basic Aggregation
+────────────────────────────────────────────────────────────
+
+-- (a) Total number of employees in each department
+SELECT jd.job_Depar      AS department,
+       COUNT(e.emp_id)   AS total_employees
+FROM EMPLOYEE e
+JOIN JOB_DEPARTMENT jd ON e.job_id = jd.job_id
+GROUP BY jd.job_Depar
+ORDER BY total_employees DESC;
+
+
+-- (b) Min, max, and average salary across all salary records
+SELECT MIN(amount)           AS min_salary,
+       MAX(amount)           AS max_salary,
+       ROUND(AVG(amount), 2) AS avg_salary
+FROM SALARY_BONUS;
+
+
+-- (c) Total bonus paid out across the entire company
+SELECT SUM(bons) AS total_bonus_paid
+FROM SALARY_BONUS;
+
+
+────────────────────────────────────────────────────────────
+  TASK 2 │ GROUP BY with HAVING
+────────────────────────────────────────────────────────────
+
+-- (a) Departments where average employee age exceeds 30
+SELECT jd.job_Depar          AS department,
+       ROUND(AVG(e.age), 1)  AS avg_age
+FROM EMPLOYEE e
+JOIN JOB_DEPARTMENT jd ON e.job_id = jd.job_id
+GROUP BY jd.job_Depar
+HAVING AVG(e.age) > 30
+ORDER BY avg_age DESC;
+
+
+-- (b) Qualification positions shared by more than 2 employees
+SELECT q.position,
+       COUNT(e.emp_id) AS employee_count
+FROM QUALIFICATION q
+JOIN EMPLOYEE e ON e.job_id = q.job_id
+GROUP BY q.position
+HAVING COUNT(e.emp_id) > 2
+ORDER BY employee_count DESC;
+
+
+-- (c) Months (from PAYROLL.pay_date) where total payroll exceeds 20,000
+SELECT TO_CHAR(pay_date, 'YYYY-MM') AS pay_month,
+       SUM(total_am)               AS total_payroll
+FROM PAYROLL
+GROUP BY TO_CHAR(pay_date, 'YYYY-MM')
+HAVING SUM(total_am) > 20000
+ORDER BY pay_month;
+
+
+────────────────────────────────────────────────────────────
+  TASK 3 │ Aggregation with Multiple Functions
+────────────────────────────────────────────────────────────
+
+-- Single department summary report
+SELECT jd.job_Depar                      AS department,
+       COUNT(DISTINCT e.emp_id)          AS total_employees,
+       NVL(SUM(p.total_am), 0)          AS total_payroll_paid,
+       ROUND(AVG(sb.amount), 2)         AS avg_salary,
+       MAX(sb.amount)                   AS highest_salary,
+       MIN(sb.amount)                   AS lowest_salary
+FROM JOB_DEPARTMENT jd
+LEFT JOIN EMPLOYEE e     ON e.job_id    = jd.job_id
+LEFT JOIN SALARY_BONUS sb ON e.salary_id = sb.salary_id
+LEFT JOIN PAYROLL p      ON p.emp_id    = e.emp_id
+GROUP BY jd.job_Depar
+ORDER BY total_payroll_paid DESC;
+
+
+────────────────────────────────────────────────────────────
+  TASK 4 │ Filtered Aggregation — HAVING with Multiple Conditions
+────────────────────────────────────────────────────────────
+
+-- (a) Departments: total payroll > 15,000 AND avg salary > 3,000
+SELECT jd.job_Depar              AS department,
+       SUM(p.total_am)          AS total_payroll,
+       ROUND(AVG(sb.amount), 2) AS avg_salary
+FROM EMPLOYEE e
+JOIN JOB_DEPARTMENT jd  ON e.job_id    = jd.job_id
+JOIN SALARY_BONUS sb    ON e.salary_id = sb.salary_id
+JOIN PAYROLL p          ON p.emp_id    = e.emp_id
+GROUP BY jd.job_Depar
+HAVING SUM(p.total_am) > 15000
+   AND AVG(sb.amount)  > 3000;
+
+
+-- (b) Qualification positions: employee count > 2 AND avg age > 28
+SELECT q.position,
+       COUNT(e.emp_id)       AS employee_count,
+       ROUND(AVG(e.age), 1) AS avg_age
+FROM QUALIFICATION q
+JOIN EMPLOYEE e ON e.job_id = q.job_id
+GROUP BY q.position
+HAVING COUNT(e.emp_id) > 2
+   AND AVG(e.age)      > 28;
+
+
+-- (c) Employees with more than 1 leave record (with full name and dept)
+SELECT e.F_Name || ' ' || e.L_Name  AS full_name,
+       jd.job_Depar                AS department,
+       COUNT(l.leave_id)           AS leave_count
+FROM EMPLOYEE e
+JOIN LEAVEE l          ON l.emp_id = e.emp_id
+JOIN JOB_DEPARTMENT jd ON e.job_id = jd.job_id
+GROUP BY e.emp_id, e.F_Name, e.L_Name, jd.job_Depar
+HAVING COUNT(l.leave_id) > 1
+ORDER BY leave_count DESC;
+
+
+────────────────────────────────────────────────────────────
+  TASK 5 │ Aggregation Across the Full Schema
+────────────────────────────────────────────────────────────
+
+-- (a) Department rollup: employees, bonus, salary range (min 2 employees)
+SELECT jd.job_Depar                      AS department,
+       COUNT(e.emp_id)                   AS total_employees,
+       NVL(SUM(sb.bons), 0)             AS total_bonus_paid,
+       MAX(sb.amount) - MIN(sb.amount)   AS salary_range
+FROM EMPLOYEE e
+JOIN JOB_DEPARTMENT jd  ON e.job_id    = jd.job_id
+JOIN SALARY_BONUS sb    ON e.salary_id = sb.salary_id
+GROUP BY jd.job_Depar
+HAVING COUNT(e.emp_id) >= 2
+ORDER BY total_employees DESC;
+
+
+-- (b) Employee with the highest total payroll (subquery, no window functions)
+SELECT full_name, department, total_payroll
+FROM (
+    SELECT e.F_Name || ' ' || e.L_Name  AS full_name,
+           jd.job_Depar                AS department,
+           SUM(p.total_am)             AS total_payroll
+    FROM PAYROLL p
+    JOIN EMPLOYEE e        ON p.emp_id = e.emp_id
+    JOIN JOB_DEPARTMENT jd ON e.job_id = jd.job_id
+    GROUP BY e.emp_id, e.F_Name, e.L_Name, jd.job_Depar
+    ORDER BY total_payroll DESC
+)
+WHERE ROWNUM = 1;
+
+
+-- (c) Leave summary by department, ranked first by most leave taken
+SELECT jd.job_Depar                                           AS department,
+       COUNT(l.leave_id)                                     AS total_leave_records,
+       ROUND(COUNT(l.leave_id) / COUNT(DISTINCT e.emp_id), 2) AS avg_leave_per_employee
+FROM JOB_DEPARTMENT jd
+JOIN EMPLOYEE e    ON e.job_id = jd.job_id
+LEFT JOIN LEAVEE l ON l.emp_id = e.emp_id
+GROUP BY jd.job_Depar
+ORDER BY total_leave_records DESC;
+
+
+============================================================
+  END OF QUERY REFERENCE
+============================================================
