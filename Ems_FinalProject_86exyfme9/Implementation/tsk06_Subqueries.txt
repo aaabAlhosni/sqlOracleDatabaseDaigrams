@@ -1,0 +1,240 @@
+============================================================
+  06 SUBQUERIES — QUERY REFERENCE
+  Employee Management System | Task ID: 86exy52gc
+  Done by: ABDULLAH BIN KHALID ALHOSNI
+============================================================
+
+
+────────────────────────────────────────────────────────────
+  TASK 1 │ Single-Row Subquery
+────────────────────────────────────────────────────────────
+
+-- (a) Employees whose salary exceeds the company average
+SELECT e.emp_id,
+       e.F_Name || ' ' || e.L_Name AS full_name,
+       sb.amount                   AS salary
+FROM EMPLOYEE e
+JOIN SALARY_BONUS sb ON e.salary_id = sb.salary_id
+WHERE sb.amount > (
+    SELECT AVG(amount) FROM SALARY_BONUS
+)
+ORDER BY sb.amount DESC;
+
+
+-- (b) Department with the highest total payroll
+SELECT jd.job_Depar AS department,
+       sub.total_payroll
+FROM JOB_DEPARTMENT jd
+JOIN (
+    SELECT e.job_id, SUM(p.total_am) AS total_payroll
+    FROM PAYROLL p
+    JOIN EMPLOYEE e ON p.emp_id = e.emp_id
+    GROUP BY e.job_id
+) sub ON sub.job_id = jd.job_id
+WHERE sub.total_payroll = (
+    SELECT MAX(SUM(p2.total_am))
+    FROM PAYROLL p2
+    JOIN EMPLOYEE e2 ON p2.emp_id = e2.emp_id
+    GROUP BY e2.job_id
+);
+
+
+────────────────────────────────────────────────────────────
+  TASK 2 │ Multi-Row Subquery with IN / ANY / ALL
+────────────────────────────────────────────────────────────
+
+-- (a) Employees in departments with at least one bonus > 500  [IN]
+SELECT DISTINCT e.emp_id,
+       e.F_Name || ' ' || e.L_Name AS full_name
+FROM EMPLOYEE e
+WHERE e.job_id IN (
+    SELECT e2.job_id
+    FROM EMPLOYEE e2
+    JOIN SALARY_BONUS sb ON e2.salary_id = sb.salary_id
+    WHERE sb.bons > 500
+)
+ORDER BY e.emp_id;
+
+
+-- (b) Salary greater than ALL salaries in 'Maintenance' dept  [ALL]
+-- Note: 'Maintenance' has no rows; > ALL(empty) = TRUE for every row.
+SELECT e.emp_id,
+       e.F_Name || ' ' || e.L_Name AS full_name,
+       sb.amount                   AS salary
+FROM EMPLOYEE e
+JOIN SALARY_BONUS sb ON e.salary_id = sb.salary_id
+WHERE sb.amount > ALL (
+    SELECT sb2.amount
+    FROM EMPLOYEE e2
+    JOIN JOB_DEPARTMENT jd ON e2.job_id    = jd.job_id
+    JOIN SALARY_BONUS sb2  ON e2.salary_id = sb2.salary_id
+    WHERE jd.job_Depar = 'Maintenance'
+)
+ORDER BY sb.amount DESC;
+
+
+-- (c) Salary greater than ANY salary in 'HR' dept  [ANY]
+-- Note: 'Human Resources' used as the closest schema match.
+SELECT e.emp_id,
+       e.F_Name || ' ' || e.L_Name AS full_name,
+       sb.amount                   AS salary
+FROM EMPLOYEE e
+JOIN SALARY_BONUS sb ON e.salary_id = sb.salary_id
+WHERE sb.amount > ANY (
+    SELECT sb2.amount
+    FROM EMPLOYEE e2
+    JOIN JOB_DEPARTMENT jd ON e2.job_id    = jd.job_id
+    JOIN SALARY_BONUS sb2  ON e2.salary_id = sb2.salary_id
+    WHERE jd.job_Depar = 'Human Resources'
+)
+ORDER BY sb.amount DESC;
+
+
+────────────────────────────────────────────────────────────
+  TASK 3 │ Correlated Subquery
+────────────────────────────────────────────────────────────
+
+-- (a) Employee name with payroll count — correlated SELECT subquery
+SELECT e.emp_id,
+       e.F_Name || ' ' || e.L_Name        AS full_name,
+       (SELECT COUNT(*)
+        FROM PAYROLL p
+        WHERE p.emp_id = e.emp_id)         AS payroll_records
+FROM EMPLOYEE e
+ORDER BY e.emp_id;
+
+
+-- (b) Employees who have taken more leave than the company average
+SELECT e.emp_id, e.F_Name || ' ' || e.L_Name AS full_name
+FROM EMPLOYEE e
+WHERE (
+    SELECT COUNT(*) FROM LEAVEE l WHERE l.emp_id = e.emp_id
+) > (
+    SELECT AVG(leave_cnt)
+    FROM (
+        SELECT COUNT(*) AS leave_cnt
+        FROM LEAVEE
+        GROUP BY emp_id
+    )
+)
+ORDER BY e.emp_id;
+
+
+────────────────────────────────────────────────────────────
+  TASK 4 │ EXISTS and NOT EXISTS
+────────────────────────────────────────────────────────────
+
+-- (a) Departments with at least one payroll record > 10,000
+SELECT jd.job_id, jd.job_Depar AS department
+FROM JOB_DEPARTMENT jd
+WHERE EXISTS (
+    SELECT 1
+    FROM PAYROLL p
+    JOIN EMPLOYEE e ON p.emp_id = e.emp_id
+    WHERE e.job_id = jd.job_id
+      AND p.total_am > 10000
+);
+
+
+-- (b) Employees with NOT EXISTS any qualification record
+-- Note: QUALIFICATION links via job_id, so this finds employees
+--       whose department has no qualification entry.
+SELECT e.emp_id, e.F_Name || ' ' || e.L_Name AS full_name
+FROM EMPLOYEE e
+WHERE NOT EXISTS (
+    SELECT 1 FROM QUALIFICATION q
+    WHERE q.job_id = e.job_id
+)
+ORDER BY e.emp_id;
+
+
+-- (c) EXISTS vs NOT IN — same query two ways (run EXPLAIN PLAN to compare)
+-- NOT EXISTS version
+SELECT e.emp_id, e.F_Name || ' ' || e.L_Name AS full_name
+FROM EMPLOYEE e
+WHERE NOT EXISTS (
+    SELECT 1 FROM QUALIFICATION q WHERE q.job_id = e.job_id
+);
+
+-- NOT IN equivalent (requires IS NOT NULL guard)
+SELECT e.emp_id, e.F_Name || ' ' || e.L_Name AS full_name
+FROM EMPLOYEE e
+WHERE e.job_id NOT IN (
+    SELECT q.job_id FROM QUALIFICATION q WHERE q.job_id IS NOT NULL
+);
+
+-- To compare in SQL Developer:
+--   EXPLAIN PLAN FOR <paste query>;
+--   SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY);
+--
+-- NOT EXISTS  -> ANTI JOIN; short-circuits on first match; NULL-safe.
+-- NOT IN      -> FILTER; full subquery scan; any NULL kills all results.
+--               NOT EXISTS is the safer and generally faster choice.
+
+
+────────────────────────────────────────────────────────────
+  TASK 5 │ Inline Views & WITH Clause (CTE)
+────────────────────────────────────────────────────────────
+
+-- (a) Top 3 highest-paid employees per department — inline view
+SELECT department, full_name, salary
+FROM (
+    SELECT jd.job_Depar                              AS department,
+           e.F_Name || ' ' || e.L_Name              AS full_name,
+           sb.amount                                AS salary,
+           RANK() OVER (
+               PARTITION BY jd.job_id
+               ORDER BY sb.amount DESC
+           )                                        AS dept_rank
+    FROM EMPLOYEE e
+    JOIN JOB_DEPARTMENT jd ON e.job_id    = jd.job_id
+    JOIN SALARY_BONUS sb   ON e.salary_id = sb.salary_id
+)
+WHERE dept_rank <= 3
+ORDER BY department, salary DESC;
+
+
+-- (b) Same query rewritten as WITH clause (CTE)
+WITH ranked_employees AS (
+    SELECT jd.job_Depar                              AS department,
+           e.F_Name || ' ' || e.L_Name              AS full_name,
+           sb.amount                                AS salary,
+           RANK() OVER (
+               PARTITION BY jd.job_id
+               ORDER BY sb.amount DESC
+           )                                        AS dept_rank
+    FROM EMPLOYEE e
+    JOIN JOB_DEPARTMENT jd ON e.job_id    = jd.job_id
+    JOIN SALARY_BONUS sb   ON e.salary_id = sb.salary_id
+)
+SELECT department, full_name, salary
+FROM ranked_employees
+WHERE dept_rank <= 3
+ORDER BY department, salary DESC;
+
+
+-- (c) Chained CTEs: dept totals first, then rank, then top 2
+WITH dept_totals AS (
+    SELECT jd.job_id,
+           jd.job_Depar          AS department,
+           SUM(p.total_am)       AS total_payroll
+    FROM PAYROLL p
+    JOIN EMPLOYEE e        ON p.emp_id = e.emp_id
+    JOIN JOB_DEPARTMENT jd ON e.job_id = jd.job_id
+    GROUP BY jd.job_id, jd.job_Depar
+),
+dept_ranked AS (
+    SELECT department,
+           total_payroll,
+           RANK() OVER (ORDER BY total_payroll DESC) AS dept_rank
+    FROM dept_totals
+)
+SELECT department, total_payroll
+FROM dept_ranked
+WHERE dept_rank <= 2
+ORDER BY dept_rank;
+
+
+============================================================
+  END OF QUERY REFERENCE
+============================================================
