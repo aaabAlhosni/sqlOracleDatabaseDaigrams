@@ -1,0 +1,64 @@
+SELECT p.pay_id AS payroll_id,
+ e.F_Name || ' ' || e.L_Name AS employee_full_name,
+ jd.job_Depar AS department,
+ q.position AS position,
+ sb.amount AS salary_amount,
+ sb.bons AS bonus,
+ l.reason AS leave_reason,
+ p.total_am AS total_amount
+FROM PAYROLL p
+JOIN EMPLOYEE e ON p.emp_id = e.emp_id
+JOIN JOB_DEPARTMENT jd ON e.job_id = jd.job_id
+LEFT JOIN QUALIFICATION q ON e.job_id = q.job_id
+JOIN SALARY_BONUS sb ON p.salary_id = sb.salary_id
+LEFT JOIN LEAVEE l ON p.leave_id = l.leave_id
+ORDER BY jd.job_Depar ASC, p.total_am DESC;
+
+
+UPDATE EMPLOYEE SET manager_id = 2 WHERE emp_id = 6;
+UPDATE EMPLOYEE SET manager_id = 1 WHERE emp_id = 7;
+UPDATE EMPLOYEE SET manager_id = 4 WHERE emp_id = 8;
+UPDATE EMPLOYEE SET manager_id = 3 WHERE emp_id = 9;
+UPDATE EMPLOYEE SET manager_id = 5 WHERE emp_id = 10;
+UPDATE EMPLOYEE SET manager_id = 11 WHERE emp_id = 12;
+COMMIT;
+
+(b) Each employee alongside their manager's full name
+SELECT e.emp_id,
+ e.F_Name || ' ' || e.L_Name AS employee_name,
+ m.F_Name || ' ' || m.L_Name AS manager_name
+FROM EMPLOYEE e
+LEFT JOIN EMPLOYEE m ON e.manager_id = m.emp_id
+ORDER BY e.emp_id;
+
+(c) Employees who are themselves managers
+SELECT DISTINCT m.emp_id, m.F_Name || ' ' || m.L_Name AS manager_full_name
+FROM EMPLOYEE e
+JOIN EMPLOYEE m ON e.manager_id = m.emp_id;
+
+
+(a) Employee/department pairings outside current assignment
+SELECT e.emp_id, e.F_Name || ' ' || e.L_Name AS employee_name,
+ jd.job_Depar AS department
+FROM EMPLOYEE e
+CROSS JOIN JOB_DEPARTMENT jd
+WHERE e.job_id != jd.job_id
+FETCH FIRST 20 ROWS ONLY;
+(b) Set operations on PAYROLL vs LEAVEE participation
+-- UNION: every employee who has either a payroll record, a leave record,
+-- or both -- essentially everyone with any payroll/HR activity at all.
+SELECT emp_id FROM PAYROLL
+UNION
+SELECT emp_id FROM LEAVEE;
+-- INTERSECT: employees who have both been paid AND taken leave -- useful
+-- for auditing whether leave was properly reflected in a payroll cycle.
+SELECT emp_id FROM PAYROLL
+INTERSECT
+SELECT emp_id FROM LEAVEE;
+-- MINUS: employees who were paid but have no leave record on file -- the
+-- normal case for staff who haven't taken time off yet.
+SELECT emp_id FROM PAYROLL
+MINUS
+SELECT emp_id FROM LEAVEE;
+
+
