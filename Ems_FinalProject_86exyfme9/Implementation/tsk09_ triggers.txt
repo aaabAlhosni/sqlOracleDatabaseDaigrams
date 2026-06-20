@@ -1,0 +1,242 @@
+============================================================
+  09 TRIGGERS — QUERY REFERENCE
+  Employee Management System | Task ID: 86exy52gc
+  Done by: ABDULLAH BIN KHALID ALHOSNI
+============================================================
+
+
+────────────────────────────────────────────────────────────
+  TASK 1 │ BEFORE INSERT — Auto-Assign emp_ID
+────────────────────────────────────────────────────────────
+
+-- Create TRG_EMP_ID
+CREATE OR REPLACE TRIGGER TRG_EMP_ID
+BEFORE INSERT ON EMPLOYEE
+FOR EACH ROW
+BEGIN
+    IF :NEW.emp_id IS NULL THEN
+        :NEW.emp_id := seq_employee.NEXTVAL;
+    END IF;
+END TRG_EMP_ID;
+/
+
+
+-- Test: INSERT without emp_id — trigger auto-assigns it
+INSERT INTO EMPLOYEE (emp_pass, age, gender, F_Name, L_Name,
+                      street, zip_code, job_id, salary_id)
+VALUES ('Auto@2026', 25, 'M', 'Khalfan', 'Al-Wahaibi',
+        'Qurum Street', '100', 1, 1);
+
+COMMIT;
+
+-- Verify the auto-assigned emp_id
+SELECT emp_id, F_Name, L_Name FROM EMPLOYEE
+WHERE F_Name = 'Khalfan' AND L_Name = 'Al-Wahaibi';
+
+
+────────────────────────────────────────────────────────────
+  TASK 2 │ AFTER INSERT — Welcome Log
+────────────────────────────────────────────────────────────
+
+-- Create EMPLOYEE_LOG table
+CREATE TABLE EMPLOYEE_LOG (
+    log_id        NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    emp_id        NUMBER,
+    action        VARCHAR2(100),
+    log_timestamp TIMESTAMP DEFAULT SYSTIMESTAMP
+);
+
+
+-- Create TRG_EMP_WELCOME_LOG
+CREATE OR REPLACE TRIGGER TRG_EMP_WELCOME_LOG
+AFTER INSERT ON EMPLOYEE
+FOR EACH ROW
+BEGIN
+    INSERT INTO EMPLOYEE_LOG (emp_id, action, log_timestamp)
+    VALUES (:NEW.emp_id, 'NEW HIRE', SYSTIMESTAMP);
+END TRG_EMP_WELCOME_LOG;
+/
+
+
+-- Test: insert 2 employees and verify log entries
+INSERT INTO EMPLOYEE (emp_pass, age, gender, F_Name, L_Name,
+                      street, zip_code, job_id, salary_id)
+VALUES ('Noor@2026', 22, 'F', 'Noor', 'Al-Kalbani',
+        'Maabela Street', '100', 4, 4);
+
+INSERT INTO EMPLOYEE (emp_pass, age, gender, F_Name, L_Name,
+                      street, zip_code, job_id, salary_id)
+VALUES ('Omar@2026', 35, 'M', 'Omar', 'Al-Abri',
+        'Rusayl Road', '311', 5, 5);
+
+COMMIT;
+
+SELECT * FROM EMPLOYEE_LOG ORDER BY log_timestamp DESC;
+
+
+────────────────────────────────────────────────────────────
+  TASK 3 │ BEFORE UPDATE — Prevent Salary Decrease
+────────────────────────────────────────────────────────────
+
+-- Create TRG_PREVENT_SALARY_CUT
+CREATE OR REPLACE TRIGGER TRG_PREVENT_SALARY_CUT
+BEFORE UPDATE OF amount ON SALARY_BONUS
+FOR EACH ROW
+BEGIN
+    IF :NEW.amount < :OLD.amount THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Salary decrease is not allowed.');
+    END IF;
+END TRG_PREVENT_SALARY_CUT;
+/
+
+
+-- (a) Test: try to lower salary (trigger fires, UPDATE is rolled back)
+UPDATE SALARY_BONUS SET amount = 1200 WHERE salary_id = 1;
+-- Error: ORA-20001: Salary decrease is not allowed.
+
+
+-- (b) Test: raise salary (succeeds)
+UPDATE SALARY_BONUS SET amount = 1700 WHERE salary_id = 1;
+COMMIT;
+
+SELECT salary_id, amount FROM SALARY_BONUS WHERE salary_id = 1;
+
+
+────────────────────────────────────────────────────────────
+  TASK 4 │ AFTER DELETE — Archive Deleted Employees
+────────────────────────────────────────────────────────────
+
+-- Create EMPLOYEE_ARCHIVE table
+CREATE TABLE EMPLOYEE_ARCHIVE (
+    emp_id      NUMBER,
+    emp_pass    VARCHAR2(50),
+    age         NUMBER(3),
+    gender      CHAR(1),
+    F_Name      VARCHAR2(30),
+    L_Name      VARCHAR2(30),
+    street      VARCHAR2(100),
+    zip_code    VARCHAR2(10),
+    job_id      NUMBER,
+    salary_id   NUMBER,
+    archived_at DATE         DEFAULT SYSDATE,
+    archived_by VARCHAR2(50) DEFAULT USER
+);
+
+
+-- Create TRG_ARCHIVE_EMPLOYEE
+CREATE OR REPLACE TRIGGER TRG_ARCHIVE_EMPLOYEE
+AFTER DELETE ON EMPLOYEE
+FOR EACH ROW
+BEGIN
+    INSERT INTO EMPLOYEE_ARCHIVE
+        (emp_id, emp_pass, age, gender, F_Name, L_Name,
+         street, zip_code, job_id, salary_id, archived_at, archived_by)
+    VALUES
+        (:OLD.emp_id, :OLD.emp_pass, :OLD.age, :OLD.gender,
+         :OLD.F_Name, :OLD.L_Name, :OLD.street, :OLD.zip_code,
+         :OLD.job_id, :OLD.salary_id, SYSDATE, USER);
+END TRG_ARCHIVE_EMPLOYEE;
+/
+
+
+-- Test: remove dependent records first, then delete employee
+-- Note: FK constraints require EMP_EMAIL/PAYROLL/LEAVEE cleanup first.
+DELETE FROM EMP_EMAIL WHERE emp_id = 13;
+DELETE FROM EMPLOYEE   WHERE emp_id = 13;
+COMMIT;
+
+-- Verify archive
+SELECT emp_id, F_Name, L_Name, archived_at, archived_by
+FROM EMPLOYEE_ARCHIVE WHERE emp_id = 13;
+
+
+────────────────────────────────────────────────────────────
+  TASK 5 │ Compound Trigger — Payroll Validation & Audit
+────────────────────────────────────────────────────────────
+
+-- Prerequisites: EMPLOYEE_LOG (Task 2) and SALARY_AUDIT (Module 08 Task 4)
+-- must exist before compiling this trigger.
+
+-- Create TRG_PAYROLL_COMPOUND
+CREATE OR REPLACE TRIGGER TRG_PAYROLL_COMPOUND
+FOR INSERT ON PAYROLL
+COMPOUND TRIGGER
+
+    v_rows_affected NUMBER := 0;
+
+BEFORE STATEMENT IS
+BEGIN
+    -- Log the start of the bulk payroll operation
+    INSERT INTO EMPLOYEE_LOG (emp_id, action, log_timestamp)
+    VALUES (NULL, 'BULK PAYROLL START', SYSTIMESTAMP);
+    COMMIT;
+END BEFORE STATEMENT;
+
+BEFORE EACH ROW IS
+    v_count NUMBER;
+BEGIN
+    -- Validate total_amount > 0
+    IF :NEW.total_am <= 0 THEN
+        RAISE_APPLICATION_ERROR(-20002,
+            'Payroll total_amount must be greater than zero.');
+    END IF;
+
+    -- Reject duplicate payroll for same employee in the same month
+    SELECT COUNT(*) INTO v_count
+    FROM PAYROLL
+    WHERE emp_id = :NEW.emp_id
+      AND TO_CHAR(pay_date, 'YYYY-MM') = TO_CHAR(:NEW.pay_date, 'YYYY-MM');
+
+    IF v_count > 0 THEN
+        RAISE_APPLICATION_ERROR(-20003,
+            'Employee ' || :NEW.emp_id ||
+            ' already has a payroll record for this month.');
+    END IF;
+END BEFORE EACH ROW;
+
+AFTER EACH ROW IS
+BEGIN
+    -- Insert one audit record per payroll row into SALARY_AUDIT
+    INSERT INTO SALARY_AUDIT (emp_id, old_amount, new_amount)
+    VALUES (:NEW.emp_id, 0, :NEW.total_am);
+
+    v_rows_affected := v_rows_affected + 1;
+END AFTER EACH ROW;
+
+AFTER STATEMENT IS
+BEGIN
+    -- Log the total rows committed in this batch
+    INSERT INTO EMPLOYEE_LOG (emp_id, action, log_timestamp)
+    VALUES (NULL, 'BULK PAYROLL END: ' || v_rows_affected || ' rows inserted',
+            SYSTIMESTAMP);
+    COMMIT;
+END AFTER STATEMENT;
+
+END TRG_PAYROLL_COMPOUND;
+/
+
+
+-- Test: valid insert
+INSERT INTO PAYROLL (pay_id, total_am, report, pay_date, emp_id, salary_id, leave_id)
+VALUES (seq_payroll.NEXTVAL, 1800, 'June payroll',
+        TO_DATE('2026-06-01','YYYY-MM-DD'), 4, 4, NULL);
+COMMIT;
+
+-- Test: invalid amount (fires -20002)
+INSERT INTO PAYROLL (pay_id, total_am, report, pay_date, emp_id, salary_id, leave_id)
+VALUES (seq_payroll.NEXTVAL, 0, 'Bad payroll',
+        TO_DATE('2026-06-01','YYYY-MM-DD'), 5, 5, NULL);
+
+-- Test: duplicate month for emp_id 4 (fires -20003)
+INSERT INTO PAYROLL (pay_id, total_am, report, pay_date, emp_id, salary_id, leave_id)
+VALUES (seq_payroll.NEXTVAL, 1800, 'Duplicate June',
+        TO_DATE('2026-06-15','YYYY-MM-DD'), 4, 4, NULL);
+
+-- Verify log and audit entries
+SELECT * FROM EMPLOYEE_LOG ORDER BY log_timestamp DESC;
+SELECT * FROM SALARY_AUDIT  ORDER BY audit_id    DESC;
+
+
+============================================================
+  END OF QUERY REFERENCE
+============================================================

@@ -1,0 +1,222 @@
+============================================================
+  07 VIEWS — QUERY REFERENCE
+  Employee Management System | Task ID: 86exy52gc
+  Done by: ABDULLAH BIN KHALID ALHOSNI
+============================================================
+
+
+────────────────────────────────────────────────────────────
+  TASK 1 │ Simple Read-Only View
+────────────────────────────────────────────────────────────
+
+-- Create VW_EMPLOYEE_SUMMARY
+CREATE OR REPLACE VIEW VW_EMPLOYEE_SUMMARY AS
+SELECT e.emp_id,
+       e.F_Name || ' ' || e.L_Name  AS full_name,
+       e.gender,
+       e.age,
+       jd.job_Depar                 AS department_name,
+       q.position                   AS job_title
+FROM EMPLOYEE e
+JOIN JOB_DEPARTMENT jd    ON e.job_id = jd.job_id
+LEFT JOIN QUALIFICATION q  ON e.job_id = q.job_id;
+
+
+-- (a) Female employees over 30
+SELECT * FROM VW_EMPLOYEE_SUMMARY
+WHERE gender = 'F'
+  AND age > 30
+ORDER BY age DESC;
+
+
+-- (b) Try INSERT through the view (documents the error)
+INSERT INTO VW_EMPLOYEE_SUMMARY (emp_id, full_name, gender, age,
+                                  department_name, job_title)
+VALUES (seq_employee.NEXTVAL, 'Test User', 'M', 28, 'Finance', 'Analyst');
+-- Error: ORA-01779: cannot modify a column which maps to a
+--         non key-preserved table.
+-- Reason: the view joins multiple tables; Oracle cannot resolve
+--         which base-table row to write into.
+
+
+────────────────────────────────────────────────────────────
+  TASK 2 │ Payroll Dashboard View
+────────────────────────────────────────────────────────────
+
+-- Create VW_PAYROLL_DASHBOARD
+CREATE OR REPLACE VIEW VW_PAYROLL_DASHBOARD AS
+SELECT p.pay_id                      AS payroll_id,
+       e.F_Name || ' ' || e.L_Name  AS employee_full_name,
+       jd.job_Depar                 AS department,
+       sb.amount                    AS salary_amount,
+       sb.bons                      AS bonus,
+       l.reason                     AS leave_reason,
+       p.pay_date                   AS payroll_date,
+       p.total_am                   AS total_amount
+FROM PAYROLL p
+JOIN EMPLOYEE e         ON p.emp_id    = e.emp_id
+JOIN JOB_DEPARTMENT jd  ON e.job_id    = jd.job_id
+JOIN SALARY_BONUS sb    ON p.salary_id = sb.salary_id
+LEFT JOIN LEAVEE l      ON p.leave_id  = l.leave_id;
+
+
+-- Top 5 payroll records by total_amount
+SELECT * FROM VW_PAYROLL_DASHBOARD
+ORDER BY total_amount DESC
+FETCH FIRST 5 ROWS ONLY;
+
+
+────────────────────────────────────────────────────────────
+  TASK 3 │ Updatable View with CHECK OPTION
+────────────────────────────────────────────────────────────
+
+-- Create VW_ACTIVE_EMPLOYEES (age >= 18, WITH CHECK OPTION)
+CREATE OR REPLACE VIEW VW_ACTIVE_EMPLOYEES AS
+SELECT emp_id, emp_pass, age, gender,
+       F_Name, L_Name, street, zip_code, job_id, salary_id
+FROM EMPLOYEE
+WHERE age >= 18
+WITH CHECK OPTION;
+
+
+-- (a) Try INSERT with age = 15 (documents the error)
+INSERT INTO VW_ACTIVE_EMPLOYEES
+    (emp_id, emp_pass, age, gender, F_Name, L_Name,
+     street, zip_code, job_id, salary_id)
+VALUES (seq_employee.NEXTVAL, 'Young@2026', 15, 'M',
+        'Test', 'User', 'Test Street', '100', 1, 1);
+-- Error: ORA-01402: view WITH CHECK OPTION where-clause violation.
+-- Reason: age = 15 fails the WHERE age >= 18 predicate; Oracle
+--         rejects the row to maintain view-level data integrity.
+
+
+-- (b) INSERT with age = 25 (succeeds)
+INSERT INTO VW_ACTIVE_EMPLOYEES
+    (emp_id, emp_pass, age, gender, F_Name, L_Name,
+     street, zip_code, job_id, salary_id)
+VALUES (seq_employee.NEXTVAL, 'Maryam@2026', 25, 'F',
+        'Maryam', 'Al-Amri', 'Bausher Street', '100', 3, 3);
+
+-- Verify the inserted row
+SELECT * FROM VW_ACTIVE_EMPLOYEES
+WHERE F_Name = 'Maryam' AND L_Name = 'Al-Amri';
+
+
+-- (c) UPDATE street address through the view; verify in base table
+UPDATE VW_ACTIVE_EMPLOYEES
+SET street = 'Madinat Al-Ilam Road'
+WHERE emp_id = 1;
+
+-- Verify change in base table
+SELECT emp_id, street FROM EMPLOYEE WHERE emp_id = 1;
+
+COMMIT;
+
+
+────────────────────────────────────────────────────────────
+  TASK 4 │ Aggregation View
+────────────────────────────────────────────────────────────
+
+-- Create VW_DEPT_STATS
+CREATE OR REPLACE VIEW VW_DEPT_STATS AS
+SELECT jd.job_Depar             AS department_name,
+       COUNT(DISTINCT e.emp_id) AS employee_count,
+       ROUND(AVG(sb.amount), 2) AS avg_salary,
+       NVL(SUM(sb.bons), 0)    AS total_bonus,
+       NVL(SUM(p.total_am), 0) AS total_payroll
+FROM JOB_DEPARTMENT jd
+LEFT JOIN EMPLOYEE e      ON e.job_id    = jd.job_id
+LEFT JOIN SALARY_BONUS sb  ON e.salary_id = sb.salary_id
+LEFT JOIN PAYROLL p        ON p.emp_id    = e.emp_id
+GROUP BY jd.job_Depar;
+
+
+-- (a) Departments where average salary > 3000
+SELECT * FROM VW_DEPT_STATS
+WHERE avg_salary > 3000
+ORDER BY avg_salary DESC;
+
+
+-- (b) Attempt DROP TABLE JOB_DEPARTMENT (documents the error)
+DROP TABLE JOB_DEPARTMENT;
+-- Error: ORA-02449: unique/primary keys in table referenced by foreign keys.
+-- Reason: EMPLOYEE.job_id and QUALIFICATION.job_id both reference
+--         JOB_DEPARTMENT. Oracle blocks the DROP to protect referential
+--         integrity regardless of whether the view exists.
+
+
+-- (c) CREATE OR REPLACE to add max and min salary columns
+CREATE OR REPLACE VIEW VW_DEPT_STATS AS
+SELECT jd.job_Depar             AS department_name,
+       COUNT(DISTINCT e.emp_id) AS employee_count,
+       ROUND(AVG(sb.amount), 2) AS avg_salary,
+       NVL(SUM(sb.bons), 0)    AS total_bonus,
+       NVL(SUM(p.total_am), 0) AS total_payroll,
+       MAX(sb.amount)           AS max_salary,
+       MIN(sb.amount)           AS min_salary
+FROM JOB_DEPARTMENT jd
+LEFT JOIN EMPLOYEE e      ON e.job_id    = jd.job_id
+LEFT JOIN SALARY_BONUS sb  ON e.salary_id = sb.salary_id
+LEFT JOIN PAYROLL p        ON p.emp_id    = e.emp_id
+GROUP BY jd.job_Depar;
+
+
+────────────────────────────────────────────────────────────
+  TASK 5 │ Materialized View with Refresh
+────────────────────────────────────────────────────────────
+
+-- Create MVW_MONTHLY_PAYROLL
+CREATE MATERIALIZED VIEW MVW_MONTHLY_PAYROLL
+BUILD IMMEDIATE
+REFRESH COMPLETE ON DEMAND
+AS
+SELECT TO_NUMBER(TO_CHAR(p.pay_date, 'YYYY'))  AS year,
+       TO_NUMBER(TO_CHAR(p.pay_date, 'MM'))    AS month,
+       jd.job_Depar                            AS department_name,
+       SUM(p.total_am)                         AS total_monthly_payroll,
+       COUNT(DISTINCT p.emp_id)                AS employee_count
+FROM PAYROLL p
+JOIN EMPLOYEE e        ON p.emp_id = e.emp_id
+JOIN JOB_DEPARTMENT jd ON e.job_id = jd.job_id
+GROUP BY TO_CHAR(p.pay_date, 'YYYY'),
+         TO_CHAR(p.pay_date, 'MM'),
+         jd.job_Depar;
+
+
+-- (a) Compare Q1 vs Q2 totals per department
+SELECT department_name,
+       SUM(CASE WHEN month IN (1,2,3) THEN total_monthly_payroll ELSE 0 END)
+           AS Q1_total,
+       SUM(CASE WHEN month IN (4,5,6) THEN total_monthly_payroll ELSE 0 END)
+           AS Q2_total
+FROM MVW_MONTHLY_PAYROLL
+WHERE year = 2026
+GROUP BY department_name
+ORDER BY department_name;
+
+
+-- (b) Insert new payroll records then manually refresh
+INSERT INTO PAYROLL (pay_id, total_am, report, pay_date, emp_id, salary_id, leave_id)
+VALUES (seq_payroll.NEXTVAL, 2200, 'April payroll',
+        TO_DATE('2026-04-01','YYYY-MM-DD'), 3, 3, NULL);
+
+INSERT INTO PAYROLL (pay_id, total_am, report, pay_date, emp_id, salary_id, leave_id)
+VALUES (seq_payroll.NEXTVAL, 1950, 'April payroll',
+        TO_DATE('2026-04-01','YYYY-MM-DD'), 5, 5, NULL);
+
+COMMIT;
+
+-- Manually refresh the materialized view to pick up new rows
+EXEC DBMS_MVIEW.REFRESH('MVW_MONTHLY_PAYROLL');
+
+
+-- (c) Verify the materialized view reflects new data after refresh
+SELECT year, month, department_name,
+       total_monthly_payroll, employee_count
+FROM MVW_MONTHLY_PAYROLL
+ORDER BY year, month, department_name;
+
+
+============================================================
+  END OF QUERY REFERENCE
+============================================================
